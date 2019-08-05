@@ -2,12 +2,84 @@
 
 This demo deploys a simple Spring Boot web application that connects to Postgres onto a Kubernetes cluster. 
 
-You can watch this demo along with an introduction to Kubernetes concepts [here](https://www.youtube.com/watch?v=OsWXtVbTnv0).
 
-## Prerequisites
+##################################### Prerequisites #################################
+
+################################ VM related setting #################################
+./HJCPPortal.sh
+
+curl -sSL https://get.docker.com/ | sh
+
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "storage-driver": "overlay2"
+}
+EOF
+
+The contents of /etc/resolv.conf
+
+nameserver 10.77.224.100
+nameserver 10.77.224.101
+search persistent.co.in
+nameserver 10.44.226.223
+
+
+
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "storage-driver": "overlay2",
+  "insecure-registry":"ip:port"
+}
+EOF
+
+
+####Install Docker-Compose########
+sudo curl -L "https://github.com/docker/compose/releases/download/1.23.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+systemctl daemon-relaod && systemctl restart docker
+#####################################################################################
 
 - Kubernetes cluster with kubectl installed and configured to use your cluster
 - docker cli installed, you must be signed into your Docker Hub account
+
+1. apt-get update && apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+apt-get update
+apt-get install -y kubelet kubeadm kubectl
+apt-mark hold kubelet kubeadm kubectl
+
+2. kubeadm config images pull
+
+3. swapoff -a
+
+4. sysctl net.bridge.bridge-nf-call-iptables=1
+
+5. kubeadm init --apiserver-advertise-address=<IP> --pod-network-cidr=10.244.0.0/16
+
+eg:
+kubeadm join 10.44.206.53:6443 --token 1h3dye.o8vmp4r0detm5nqq \
+    --discovery-token-ca-cert-hash sha256:6cc98e14359e6f9ae4d38b960319e39ef5f2534a2a0e3ccd54226d191620325a
+kubeadm join 10.44.206.52:6443 --token gzr7cs.aql8dw5ncl4wa6z9 \
+    --discovery-token-ca-cert-hash sha256:30b65e3fa7b222254cac133547046f0c1492c1d6aad6c3e3e98f1c29c959a4f8
+
+6. to run kubectl commands 
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+7. kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/62e44c867a2846fefb68bd5f178daf4da3095ccb/Documentation/kube-flannel.yml
+
+8. systemctl daemon-reload
+systemctl restart kubelet
+
+###################################################################################################
 
 ## Deploy Spring Boot app and Postgres on Kubernetes
 1. Deploy postgres with a persistent volume claim
