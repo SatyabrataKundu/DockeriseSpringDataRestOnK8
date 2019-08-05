@@ -21,32 +21,28 @@ KUBEADM is tool to bootstap the cluster in VM/EC2/GCE
 	apt-get update
 	apt-get install -y kubelet kubeadm kubectl
 	apt-mark hold kubelet kubeadm kubectl
-	```
-	```
+
 	kubeadm config images pull
-	```
-	```	
+
 	swapoff -a
-	```
-	```	
+	
 	sysctl net.bridge.bridge-nf-call-iptables=1
-	```
-	```
+
 	kubeadm init --apiserver-advertise-address=<IP> --pod-network-cidr=10.244.0.0/16
 	```
-	#Example:
+
+#Example:
 	```
 	kubeadm join 10.44.206.53:6443 --token 1h3dye.o8vmp4r0detm5nqq \
     	--discovery-token-ca-cert-hash sha256:6cc98e14359e6f9ae4d38b960319e39ef5f2534a2a0e3ccd54226d191620325a
 	```
-	#To run kubectl commands  need to export the kube config
+	
+#To run kubectl commands  need to export the kube config
 	```
 	mkdir -p $HOME/.kube
 	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 	sudo chown $(id -u):$(id -g) $HOME/.kube/config
-	```
-	
-	```
+
 	kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/62e44c867a2846fefb68bd5f178daf4da3095ccb/Documentation/kube-flannel.yml
 	```
 4. Through Docker Desktop cluster can be created through kubernetes installation 
