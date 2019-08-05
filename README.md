@@ -4,6 +4,7 @@ This demo deploys a simple Spring Boot web application that connects to Postgres
 
 
 ####################### Prerequisites ###########################
+
 Through MiniKube Kunernetes cluster of computers that are connected to work as a single unit. 
 1. 	Install Minikube in Windows 10 has a dependency of VM(virtualbox or hyperv). 
 	minikube start --vm-driver=virtualbox
@@ -29,13 +30,13 @@ KUBEADM is tool to bootstap the cluster in VM/EC2/GCE
 	sysctl net.bridge.bridge-nf-call-iptables=1
 
 	kubeadm init --apiserver-advertise-address=<IP> --pod-network-cidr=10.244.0.0/16
-	```
+
 
 #Example:
 	```
 	kubeadm join 10.44.206.53:6443 --token 1h3dye.o8vmp4r0detm5nqq \
     	--discovery-token-ca-cert-hash sha256:6cc98e14359e6f9ae4d38b960319e39ef5f2534a2a0e3ccd54226d191620325a
-	```
+
 	
 #To run kubectl commands  need to export the kube config
 	```
@@ -44,7 +45,7 @@ KUBEADM is tool to bootstap the cluster in VM/EC2/GCE
 	sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 	kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/62e44c867a2846fefb68bd5f178daf4da3095ccb/Documentation/kube-flannel.yml
-	```
+
 4. Through Docker Desktop cluster can be created through kubernetes installation 
 	
 #################################################################
@@ -135,38 +136,63 @@ KUBEADM is tool to bootstap the cluster in VM/EC2/GCE
    
    
 --------------------------------------------------------------------
-##################DEV-ENVIRONMET-STARTS##################
-#########Set-up Enviroment Variable in VS-code###########
+###DEV-ENVIRONMET-STARTS
+###Set-up Enviroment Variable in VS-code
+   ```
 [Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Java\jdk1.8.0_45")
-#check Environment variable in VS code
+###check Environment variable in VS code
+   ```
 $ENV:JAVA_HOME
 $ENV:PATH
-#########RUN the maven packing########################### 
+###RUN the maven packing
+   ```
 ./mvnw -DskipTests package
-##########Docker-hub Account login#######################
+or
+maven clean install -DskipTests
+
+###Docker-hub Account login
+   ```
 docker login
-#############Docker image Building#######################
+
+####Docker image Building
+   ```
 docker build -t satyabratakundu/spring-boot-postgres-on-k8s:v1 .
-#############Push image in Docker hub account############
+
+####Push image in Docker hub account
+   ```
 docker push satyabratakundu/spring-boot-postgres-on-k8s:v1
-##################DEV-ENVIRONMET-ENDS####################
 
 
 
-############K8-CLUSTER-ENVIRONMET-STARTS#################
-######Access images from Docker-hub required login#######
+
+###K8-CLUSTER-ENVIRONMET-STARTS
+###Access images from Docker-hub required login
+   ```
 docker login
-#####Inpest the configuration for Docker-hub login#######
+
+###Inpest the configuration for Docker-hub login
+   ```
 vi /root/.docker/config.json
-#############Pull image in Docker hub account############
+
+###Pull image in Docker hub account
+   ```
 docker pull satyabratakundu/spring-boot-postgres-on-k8s:v1
-#############Check images in Host VM of K8 master########
+
+
+###Check images in Host VM of K8 master
+   ```
 docker images
-####Create required yml files in specific directory######
+
+####Create required yml files in specific directory
+   ```
 cd /opt/training-files/
-##################Prepare Postgres.yml file##############
+
+###Prepare Postgres.yml file
+   ```
 vi postgres.yml
-##################PASTE the below contents###############
+
+###PASTE the below contents
+   ```
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -236,10 +262,13 @@ spec:
     - port: 5432
   selector:
     app: postgres
-#########################################################
-###########Prepare spring-boot-app.yml file##############
+
+###Prepare spring-boot-app.yml file
+   ```
 vi spring-boot-app.yml
-##################PASTE the below contents###############
+
+###PASTE the below contents
+   ```
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -272,34 +301,50 @@ spec:
                 name: hostname-config
                 key: postgres_host
         image: satyabratakundu/spring-boot-postgres-on-k8s:v1
-###########################################################
-######Deploy postgres with a persistent volume #######
+
+###Deploy postgres with a persistent volume
+   ```
 kubectl create -f postgres.yml
-####Create a config map with the hostname of Postgres######
+
+###Create a config map with the hostname of Postgres
+   ```
 kubectl create configmap hostname-config --from-literal=postgres_host=$(kubectl get svc postgres -o jsonpath="{.spec.clusterIP}")
-############Deploy the spring-boot-app######################
+
+###Deploy the spring-boot-app
+   ```
 kubectl create -f spring-boot-app.yml
-########Create an external load balancer for your app#######
-kubectl expose deployment spring-boot-postgres-sample --type=LoadBalancer --port=8080
-########Create an NodePort to access it from hostip:Nodeport#######
+
+###Create an NodePort to access it from hostip:Nodeport
+   ```
 kubectl expose deployment spring-boot-postgres-sample --type=NodePort --port=8080
-############Get the External IP address of Service######### 
-####App accessible at http://<External IP Address>:8080####
+
+###Get the External IP address of Service
+###App accessible at http://<External IP Address>:8080
+   ```
 kubectl get svc spring-boot-postgres-sample
-#############Run Kubectl commands to verify################
+
+###Run Kubectl commands to verify
+   ```
 kubectl get pods
 kubectl get pods
 kubectl get svc
 kubectl get cm
 kubectl get deployment
-###################Scale your application####################
+
+###Scale your application
+   ```
 kubectl scale deployment spring-boot-postgres-sample --replicas=3
-#############Run Kubectl commands to verify################
+
+###Run Kubectl commands to verify
+   ```
 kubectl get pods
-###########Edit Deploymet to change any config###############
+
+###Edit Deploymet to change any config
+   ```
 kubectl edit deployment spring-boot-postgres-sample
-############K8-CLUSTER-ENVIRONMET-ENDS#################
-##################Clean-UP#############################
+
+###Clean-UP
+   ```
 kubectl get deployment
 kubectl delete deployment postgres
 kubectl delete deployment spring-boot-postgres-sample
@@ -308,5 +353,4 @@ kubectl delete svc postgres spring-boot-postgres-sample
 kubectl get cm
 kubectl delete cm postgres-config
 kubectl get pvc
-kubectl delete  pvc postgres-pv-claim
---------------------------------------------------------------------   
+kubectl delete  pvc postgres-pv-claim  
